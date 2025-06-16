@@ -1,5 +1,9 @@
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+        int port = 8080;
+        if (args.length > 0){
+            port = Integer.parseInt(args[0]);
+        }
+        new TcpEchoServer(port).start();
     }
 }
