@@ -4,12 +4,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class TcpEchoServer {
-    public final int port;
-
-    public TcpEchoServer(int port) {
-        this.port = port;
-    }
+public record TcpEchoServer(int port) {
 
     public void start() {
         System.out.println("Server started at port: " + port);
@@ -53,9 +48,18 @@ public class TcpEchoServer {
             } finally {
                 try {
                     socket.close();
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
                 System.out.println("Disconnected: " + clientInfo);
             }
         }
+    }
+
+    public static void main(String[] args) {
+        int port = 8080;
+        if (args.length > 0) {
+            port = Integer.parseInt(args[0]);
+        }
+        new TcpEchoServer(port).start();
     }
 }
