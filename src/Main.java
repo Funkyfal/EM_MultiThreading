@@ -1,4 +1,9 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Main {
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) {
         CircularBuffer<Integer> buffer = new CircularBuffer<>(10);
 
@@ -6,7 +11,7 @@ public class Main {
             try {
                 for (int i = 0; i < 20; i++) {
                     buffer.put(i);
-                    System.out.println("Producer added a number "  + i + " to the buffer.");
+                    logger.info("Producer added a number {} to the buffer.", i);
                     Thread.sleep(200);
                 }
             } catch (InterruptedException e) {
@@ -18,7 +23,8 @@ public class Main {
             try {
                 for(int i = 0; i < 20; i++) {
                     Integer element = buffer.get();
-                    System.out.println("Consumer got an element " + element);
+
+                    logger.info("Consumer got an element {}", element);
                     /*
                       Задержку сделал чуть больше для наглядности.
                       Также при запуске будет писаться сначала: "Consumer got an element 0" до того, как
@@ -37,5 +43,12 @@ public class Main {
 
         producer.start();
         consumer.start();
+
+        try {
+            producer.join();
+            consumer.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
