@@ -1,9 +1,5 @@
-public class KeyValue {
-    public final String key;
-    public final String value;
-
-    public KeyValue(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
+//я не уверен, что это правильное решение, но судя по тому, что я прочитал, если
+//использовать record class, то все поля становятся private final, перегружается
+// equals() и hashCode(). по идее это то, что нужно. если я не прав, то поправь, пожалуйста
+public record KeyValue(String key, String value) {
 }

@@ -3,6 +3,7 @@ import org.slf4j.LoggerFactory;
 import tasks.MapTask;
 import tasks.ReduceTask;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,12 +27,17 @@ public class Worker implements Runnable {
         try {
             MapTask mapTask;
             while ((mapTask = coordinator.getMapTask()) != null) {
-                String content = new String(Files.readAllBytes(Paths.get(mapTask.fileName)));
-                List<KeyValue> keyValues = map(content);
+                List<KeyValue> keyValues = new ArrayList<>();
+                try (BufferedReader reader = Files.newBufferedReader(Paths.get(mapTask.fileName))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        keyValues.addAll(map(line));
+                    }
+                }
 
                 Map<Integer, List<KeyValue>> buckets = new HashMap<>();
                 for (KeyValue keyValue : keyValues) {
-                    int i = Math.floorMod(keyValue.key.hashCode(), numReduce);
+                    int i = Math.floorMod(keyValue.key().hashCode(), numReduce);
                     buckets.computeIfAbsent(i, k -> new ArrayList<>()).add(keyValue);
                 }
 
@@ -40,7 +46,7 @@ public class Worker implements Runnable {
                     try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
                         List<KeyValue> list = buckets.getOrDefault(i, Collections.emptyList());
                         for (KeyValue keyValue : list) {
-                            writer.write(keyValue.key + "\t" + keyValue.value + "\n");
+                            writer.write(keyValue.key() + "\t" + keyValue.value() + "\n");
                         }
                     }
                 }
@@ -60,11 +66,11 @@ public class Worker implements Runnable {
                     }
                 }
 
-                all.sort(Comparator.comparing(keyValue -> keyValue.key));
+                all.sort(Comparator.comparing(KeyValue::key));
 
                 Map<String, List<String>> groups = new LinkedHashMap<>();
                 for (KeyValue keyValue : all) {
-                    groups.computeIfAbsent(keyValue.key, k -> new ArrayList<>()).add(keyValue.value);
+                    groups.computeIfAbsent(keyValue.key(), k -> new ArrayList<>()).add(keyValue.value());
                 }
                 String outFile = String.format("mr-%d.txt", reduceTask.id);
                 try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outFile))) {
@@ -78,8 +84,8 @@ public class Worker implements Runnable {
             coordinator.awaitReduceFinished();
 
         } catch (IOException | InterruptedException e) {
-            logger.error("An error occurred in Worker.run() method");
-            e.printStackTrace();
+            logger.error("An error occurred in Worker.run() method", e);
+            throw new RuntimeException("Worker failed processing its task");
         }
     }
 

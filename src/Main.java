@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -27,6 +28,16 @@ public class Main {
             executor.submit(new Worker(coordinator, numReduce));
         }
         executor.shutdown();
+        try {
+            boolean terminated = executor.awaitTermination(60, TimeUnit.SECONDS);
+            if (!terminated) {
+                logger.warn("Executor didn't terminate within the timeout.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.error("Thread was interrupted while waiting Executor termination.");
+            throw new RuntimeException(e);
+        }
         logger.info("Job has been done");
     }
 }

@@ -30,7 +30,6 @@ public class Coordinator {
         this.mapDone = new CountDownLatch(inputFiles.size());
         this.reduceDone = new CountDownLatch(numReduce);
 
-        //TODO: ТУТ ВОЗМОЖНО БУДЕТ ОШИБКА ИЗ-ЗА id = i + 1
         for (int i = 0; i < inputFiles.size(); i++) {
             mapQueue.add(new MapTask(i + 1, inputFiles.get(i)));
         }
@@ -63,11 +62,10 @@ public class Coordinator {
                     parts.add(p.toString());
                 }
             } catch (IOException e) {
-                logger.error("Error occurred in Map tasks awaiting method");
-                e.printStackTrace();
+                logger.error("An error occurred in Map tasks awaiting method.", e);
+                throw new RuntimeException("Failed to process Map results.", e);
             }
 
-            //TODO ЗДЕСЬ ТОЖЕ МОЖЕТ БЫТЬ ПОТЕНЦИАЛЬНАЯ ОШИБКА ИЗ-ЗА r + 1
             reduceQueue.add(new ReduceTask(r + 1, parts));
         }
     }
