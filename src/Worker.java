@@ -28,7 +28,7 @@ public class Worker implements Runnable {
             MapTask mapTask;
             while ((mapTask = coordinator.getMapTask()) != null) {
                 List<KeyValue> keyValues = new ArrayList<>();
-                try (BufferedReader reader = Files.newBufferedReader(Paths.get(mapTask.fileName))) {
+                try (BufferedReader reader = Files.newBufferedReader(Paths.get(mapTask.fileName()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         keyValues.addAll(map(line));
@@ -42,7 +42,7 @@ public class Worker implements Runnable {
                 }
 
                 for (int i = 0; i < numReduce; i++) {
-                    String fileName = String.format("mr-%d-%d", mapTask.id, i);
+                    String fileName = String.format("mr-%d-%d", mapTask.id(), i);
                     try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
                         List<KeyValue> list = buckets.getOrDefault(i, Collections.emptyList());
                         for (KeyValue keyValue : list) {
@@ -58,7 +58,7 @@ public class Worker implements Runnable {
             ReduceTask reduceTask;
             while ((reduceTask = coordinator.getReduceTask()) != null) {
                 List<KeyValue> all = new ArrayList<>();
-                for (String file : reduceTask.intermediateFiles) {
+                for (String file : reduceTask.intermediateFiles()) {
                     List<String> lines = Files.readAllLines(Paths.get(file));
                     for (String line : lines) {
                         String[] parts = line.split("\t");
@@ -72,7 +72,7 @@ public class Worker implements Runnable {
                 for (KeyValue keyValue : all) {
                     groups.computeIfAbsent(keyValue.key(), k -> new ArrayList<>()).add(keyValue.value());
                 }
-                String outFile = String.format("mr-%d.txt", reduceTask.id);
+                String outFile = String.format("mr-%d.txt", reduceTask.id());
                 try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outFile))) {
                     for (Map.Entry<String, List<String>> e : groups.entrySet()) {
                         String result = reduce(e.getValue());
